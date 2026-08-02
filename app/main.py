@@ -60,6 +60,7 @@ app.mount("/static/images", StaticFiles(directory=images_dir), name="static_imag
 # Mount API routers
 app.include_router(faces_router)
 app.include_router(spider_router)
+app.include_router(__import__("app.detect", fromlist=["router"]).router)
 
 @app.get("/")
 async def root():

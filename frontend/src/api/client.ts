@@ -1,4 +1,5 @@
 import type {
+  DetectResponse,
   DeleteFaceResponse,
   SearchResponse,
   Stats,
@@ -73,6 +74,15 @@ export const api = {
       `/api/faces/search?top_k=${topK}&min_similarity=${minSimilarity}`,
       { method: 'POST', body: form },
     )
+  },
+
+  detectFaces(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    return request<DetectResponse>('/api/faces/detect', {
+      method: 'POST',
+      body: form,
+    })
   },
 
   verifyFaces(imageA: File, imageB: File) {

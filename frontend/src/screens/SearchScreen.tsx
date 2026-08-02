@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import type { Match, SearchResponse } from '../api/types'
+import type { FaceDetection, Match, SearchResponse } from '../api/types'
 import { MatchCard } from '../components/MatchCard'
 import { ScanViewport } from '../components/ScanViewport'
 import { CloseIcon, ReticleIcon, TrashIcon } from '../components/icons'
@@ -18,7 +18,7 @@ export function SearchScreen({ onToast, onCorpusChanged }: SearchScreenProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [response, setResponse] = useState<SearchResponse | null>(null)
   const [loading, setLoading] = useState(false)
-  const [faceDetected, setFaceDetected] = useState(false)
+  const [detections, setDetections] = useState<FaceDetection[]>([])
   const [minSimilarity, setMinSimilarity] = useState(0)
   const [deleteTarget, setDeleteTarget] = useState<Match | null>(null)
 
@@ -30,22 +30,23 @@ export function SearchScreen({ onToast, onCorpusChanged }: SearchScreenProps) {
     setFile(nextFile)
     setPreviewUrl(URL.createObjectURL(nextFile))
     setResponse(null)
-    setFaceDetected(false)
+    setDetections([])
   }
 
   const analyze = async () => {
     if (!file || loading) return
     setLoading(true)
     setResponse(null)
-    setFaceDetected(false)
+    setDetections([])
     try {
-      const [result] = await Promise.all([
+      const [result, detection] = await Promise.all([
         api.searchFaces(file, 15, minSimilarity),
+        api.detectFaces(file),
         new Promise((resolve) => window.setTimeout(resolve, 1_200)),
       ])
       setResponse(result)
-      setFaceDetected(result.faces_detected > 0)
-      if (!result.faces_detected) onToast("Aucun visage détecté dans cette image.", 'error')
+      setDetections(detection.faces)
+      if (!detection.faces_detected) onToast("Aucun visage détecté dans cette image.", 'error')
     } catch (error) {
       onToast(error instanceof Error ? error.message : 'Recherche impossible.', 'error')
     } finally {
@@ -80,7 +81,7 @@ export function SearchScreen({ onToast, onCorpusChanged }: SearchScreenProps) {
             file={file}
             previewUrl={previewUrl}
             scanning={loading}
-            faceDetected={faceDetected}
+            detections={detections}
             onFile={selectFile}
           />
           <div className="analysis-controls">

@@ -1,5 +1,17 @@
 export type Verdict = 'fort' | 'moyen' | 'sosie' | 'faux_positif'
 export type ServiceState = 'checking' | 'healthy' | 'down'
+export type Landmark = [number, number]
+
+export interface FaceDetection {
+  bbox: [number, number, number, number]
+  landmarks: [Landmark, Landmark, Landmark, Landmark, Landmark]
+  det_score: number
+}
+
+export interface DetectResponse {
+  faces_detected: number
+  faces: FaceDetection[]
+}
 
 export interface Face {
   id: number

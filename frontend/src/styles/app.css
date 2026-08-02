@@ -449,48 +449,6 @@ a:focus-visible {
   animation: scan-pass 1.2s ease-in-out forwards;
 }
 
-.face-overlay {
-  position: absolute;
-  top: 18%;
-  left: 25%;
-  width: 50%;
-  height: 64%;
-  pointer-events: none;
-  border: 1px solid rgba(70, 224, 192, 0.4);
-  animation: overlay-in 300ms ease both;
-}
-
-.bracket {
-  position: absolute;
-  width: 23px;
-  height: 23px;
-  border-color: var(--signal);
-  border-style: solid;
-}
-
-.bracket--tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; }
-.bracket--tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; }
-.bracket--bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; }
-.bracket--br { right: -2px; bottom: -2px; border-width: 0 3px 3px 0; }
-
-.landmark {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: var(--signal);
-  border: 1px solid var(--bg-0);
-  border-radius: 50%;
-  box-shadow: 0 0 7px var(--signal);
-  animation: landmark-pulse 1.8s infinite;
-}
-
-.landmark--eye-a { top: 34%; left: 29%; }
-.landmark--eye-b { top: 34%; right: 29%; }
-.landmark--nose { top: 52%; left: calc(50% - 3px); }
-.landmark--mouth-a { bottom: 25%; left: 39%; }
-.landmark--mouth-b { right: 39%; bottom: 25%; }
-
-.face-overlay__label,
 .scan-corner-label,
 .scan-change {
   position: absolute;
@@ -498,15 +456,6 @@ a:focus-visible {
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.06em;
-}
-
-.face-overlay__label {
-  top: calc(100% + 7px);
-  left: -2px;
-  padding: 3px 5px;
-  color: var(--bg-0);
-  font-weight: 600;
-  background: var(--signal);
 }
 
 .scan-corner-label {
@@ -982,8 +931,6 @@ a:focus-visible {
 @keyframes led-pulse { 70% { box-shadow: 0 0 0 6px rgba(70, 224, 192, 0); } 100% { box-shadow: 0 0 0 0 rgba(70, 224, 192, 0); } }
 @keyframes led-down { 50% { opacity: 0.3; } }
 @keyframes scan-pass { 0% { top: 1%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 99%; opacity: 0; } }
-@keyframes overlay-in { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
-@keyframes landmark-pulse { 50% { opacity: 0.45; transform: scale(0.75); } }
 @keyframes card-in { to { opacity: 1; transform: translateY(0); } }
 @keyframes skeleton-sweep { to { background-position: -300% 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }

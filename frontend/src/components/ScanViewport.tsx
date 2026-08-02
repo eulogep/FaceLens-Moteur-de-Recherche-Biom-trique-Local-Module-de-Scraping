@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { FaceDetection } from '../api/types'
 import { Dropzone } from './Dropzone'
 import { ReticleIcon, UploadIcon } from './icons'
 
@@ -6,12 +7,58 @@ interface ScanViewportProps {
   file: File | null
   previewUrl: string | null
   scanning: boolean
-  faceDetected: boolean
+  detections: FaceDetection[]
   onFile: (file: File) => void
 }
 
+function drawDetections(
+  context: CanvasRenderingContext2D,
+  detections: FaceDetection[],
+  scale: number,
+  offsetX: number,
+  offsetY: number,
+) {
+  detections.forEach((detection, index) => {
+    const [x1, y1, x2, y2] = detection.bbox
+    const left = offsetX + x1 * scale
+    const top = offsetY + y1 * scale
+    const width = (x2 - x1) * scale
+    const height = (y2 - y1) * scale
+
+    context.save()
+    context.strokeStyle = '#46e0c0'
+    context.lineWidth = 2
+    context.shadowColor = 'rgba(70, 224, 192, 0.75)'
+    context.shadowBlur = 10
+    context.strokeRect(left, top, width, height)
+    context.shadowBlur = 0
+
+    detection.landmarks.forEach(([x, y]) => {
+      context.beginPath()
+      context.arc(offsetX + x * scale, offsetY + y * scale, 4, 0, Math.PI * 2)
+      context.fillStyle = '#46e0c0'
+      context.fill()
+      context.lineWidth = 1
+      context.strokeStyle = '#050a0c'
+      context.stroke()
+    })
+
+    const label = `FACE ${String(index + 1).padStart(2, '0')} · ${(
+      detection.det_score * 100
+    ).toFixed(1)}%`
+    context.font = '600 11px "JetBrains Mono", monospace'
+    const labelWidth = context.measureText(label).width + 12
+    const labelTop = Math.max(0, top - 21)
+    context.fillStyle = '#46e0c0'
+    context.fillRect(left, labelTop, labelWidth, 21)
+    context.fillStyle = '#050a0c'
+    context.fillText(label, left + 6, labelTop + 14)
+    context.restore()
+  })
+}
+
 export function ScanViewport(props: ScanViewportProps) {
-  const { file, previewUrl, scanning, faceDetected, onFile } = props
+  const { file, previewUrl, scanning, detections, onFile } = props
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>()
 
@@ -25,17 +72,20 @@ export function ScanViewport(props: ScanViewportProps) {
       const scale = Math.min(canvas.width / image.width, canvas.height / image.height)
       const width = image.width * scale
       const height = image.height * scale
+      const offsetX = (canvas.width - width) / 2
+      const offsetY = (canvas.height - height) / 2
       context?.clearRect(0, 0, canvas.width, canvas.height)
       context?.drawImage(
         image,
-        (canvas.width - width) / 2,
-        (canvas.height - height) / 2,
+        offsetX,
+        offsetY,
         width,
         height,
       )
+      if (context) drawDetections(context, detections, scale, offsetX, offsetY)
     }
     image.src = previewUrl
-  }, [previewUrl])
+  }, [previewUrl, detections])
 
   return (
     <section className="scan-shell">
@@ -58,22 +108,13 @@ export function ScanViewport(props: ScanViewportProps) {
             </div>
           ) : (
             <div className="scan-canvas-wrap">
-              <canvas ref={canvasRef} width="960" height="720" />
+              <canvas
+                ref={canvasRef}
+                width="960"
+                height="720"
+                aria-label={`${detections.length} visage(s) détecté(s)`}
+              />
               {scanning && <span className="scan-line" key={Date.now()} />}
-              {faceDetected && (
-                <div className="face-overlay" aria-label="Visage détecté">
-                  <i className="bracket bracket--tl" />
-                  <i className="bracket bracket--tr" />
-                  <i className="bracket bracket--bl" />
-                  <i className="bracket bracket--br" />
-                  <span className="landmark landmark--eye-a" />
-                  <span className="landmark landmark--eye-b" />
-                  <span className="landmark landmark--nose" />
-                  <span className="landmark landmark--mouth-a" />
-                  <span className="landmark landmark--mouth-b" />
-                  <span className="face-overlay__label">VISAGE DÉTECTÉ</span>
-                </div>
-              )}
               <span className="scan-corner-label">FL / OPTICAL INPUT</span>
               <span className="scan-change"><UploadIcon /> Remplacer</span>
             </div>
