@@ -1,5 +1,6 @@
 export type Verdict = 'fort' | 'moyen' | 'sosie' | 'faux_positif'
 export type ServiceState = 'checking' | 'healthy' | 'down'
+export type ScreenId = 'search' | 'compare' | 'corpus' | 'scraping' | 'journal'
 export type Landmark = [number, number]
 
 export interface FaceDetection {
@@ -21,6 +22,27 @@ export interface Face {
   source_type: string
   tags: string | null
   created_at: string
+}
+
+export interface FaceListResponse {
+  items: Face[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface FaceCountResponse {
+  total: number
+}
+
+export interface ExcludedDomain {
+  domain: string
+  created_at: string
+}
+
+export interface ExcludedDomainListResponse {
+  domains: ExcludedDomain[]
+  total: number
 }
 
 export interface Match extends Face {
@@ -70,5 +92,11 @@ export interface Stats {
 export interface DeleteFaceResponse {
   success: boolean
   face_id: number
+  message: string
+}
+
+export interface DeleteDomainResponse {
+  domain: string
+  deleted_faces_count: number
   message: string
 }

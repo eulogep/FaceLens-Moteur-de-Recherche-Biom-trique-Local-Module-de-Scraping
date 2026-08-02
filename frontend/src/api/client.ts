@@ -1,6 +1,11 @@
 import type {
   DetectResponse,
   DeleteFaceResponse,
+  DeleteDomainResponse,
+  ExcludedDomainListResponse,
+  Face,
+  FaceCountResponse,
+  FaceListResponse,
   SearchResponse,
   Stats,
   VerifyResponse,
@@ -67,6 +72,31 @@ export const api = {
 
   getStats: () => request<Stats>('/api/scrape/stats'),
 
+  getFaceCount: () => request<FaceCountResponse>('/api/faces/count'),
+
+  listFaces({
+    limit = 24,
+    offset = 0,
+    sourceType = '',
+    q = '',
+  }: {
+    limit?: number
+    offset?: number
+    sourceType?: string
+    q?: string
+  } = {}) {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    })
+    if (sourceType) params.set('source_type', sourceType)
+    if (q) params.set('q', q)
+    return request<FaceListResponse>(`/api/faces?${params.toString()}`)
+  },
+
+  getExcludedDomains: () =>
+    request<ExcludedDomainListResponse>('/api/scrape/domains'),
+
   searchFaces(file: File, topK = 15, minSimilarity = 0) {
     const form = new FormData()
     form.append('file', file)
@@ -99,6 +129,30 @@ export const api = {
     request<DeleteFaceResponse>(`/api/faces/${faceId}`, {
       method: 'DELETE',
     }),
+
+  deleteDomain: (domain: string) =>
+    request<DeleteDomainResponse>(
+      `/api/scrape/source/${encodeURIComponent(domain)}`,
+      { method: 'DELETE' },
+    ),
+
+  async downloadFaceImage(face: Face) {
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 30_000)
+    try {
+      const response = await fetch(faceImageUrl(face.image_path), {
+        signal: controller.signal,
+      })
+      if (!response.ok) throw new ApiError(`Image indisponible · HTTP ${response.status}`, response.status)
+      const blob = await response.blob()
+      const extension = blob.type.split('/')[1] || 'jpg'
+      return new File([blob], face.person_name || `face-${face.id}.${extension}`, {
+        type: blob.type || 'image/jpeg',
+      })
+    } finally {
+      window.clearTimeout(timeout)
+    }
+  },
 }
 
 export async function checkSearxng(): Promise<boolean> {

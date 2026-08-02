@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { FaceDetection, Match, SearchResponse } from '../api/types'
 import { MatchCard } from '../components/MatchCard'
@@ -10,10 +10,15 @@ const DISCLAIMER = "La similarité faciale n'est pas une preuve d'identité. Vé
 
 interface SearchScreenProps {
   onToast: (text: string, tone?: ToastMessage['tone']) => void
-  onCorpusChanged: () => void
+  onCorpusChanged: (faceId?: number) => void
+  initialFile?: File | null
 }
 
-export function SearchScreen({ onToast, onCorpusChanged }: SearchScreenProps) {
+export function SearchScreen({
+  onToast,
+  onCorpusChanged,
+  initialFile,
+}: SearchScreenProps) {
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [response, setResponse] = useState<SearchResponse | null>(null)
@@ -26,12 +31,16 @@ export function SearchScreen({ onToast, onCorpusChanged }: SearchScreenProps) {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
 
-  const selectFile = (nextFile: File) => {
+  const selectFile = useCallback((nextFile: File) => {
     setFile(nextFile)
     setPreviewUrl(URL.createObjectURL(nextFile))
     setResponse(null)
     setDetections([])
-  }
+  }, [])
+
+  useEffect(() => {
+    if (initialFile) selectFile(initialFile)
+  }, [initialFile, selectFile])
 
   const analyze = async () => {
     if (!file || loading) return
@@ -63,7 +72,7 @@ export function SearchScreen({ onToast, onCorpusChanged }: SearchScreenProps) {
         results: current.results.filter((match) => match.id !== deleteTarget.id),
       } : current)
       onToast(`Face #${deleteTarget.id} supprimée du corpus.`, 'success')
-      onCorpusChanged()
+      onCorpusChanged(deleteTarget.id)
     } catch (error) {
       onToast(error instanceof Error ? error.message : 'Suppression impossible.', 'error')
     } finally {

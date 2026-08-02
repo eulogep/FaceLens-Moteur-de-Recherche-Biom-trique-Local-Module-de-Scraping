@@ -1,12 +1,21 @@
+import type { ScreenId } from '../api/types'
 import { CompareIcon, CorpusIcon, JournalIcon, ReticleIcon, SpiderIcon } from './icons'
 
 interface RailProps {
   corpusCount: number
   activeJobs: number
+  activeScreen: ScreenId
+  onNavigate: (screen: ScreenId) => void
   onUnavailable: (label: string) => void
 }
 
-export function Rail({ corpusCount, activeJobs, onUnavailable }: RailProps) {
+export function Rail({
+  corpusCount,
+  activeJobs,
+  activeScreen,
+  onNavigate,
+  onUnavailable,
+}: RailProps) {
   const items = [
     { id: 'search', label: 'Recherche', icon: ReticleIcon, badge: 0 },
     { id: 'compare', label: 'Comparaison', icon: CompareIcon, badge: 0 },
@@ -21,10 +30,18 @@ export function Rail({ corpusCount, activeJobs, onUnavailable }: RailProps) {
         <button
           key={id}
           className="rail__item"
-          data-active={id === 'search'}
-          data-tooltip={id === 'search' ? label : `${label} · phase suivante`}
+          data-active={id === activeScreen}
+          data-tooltip={
+            id === 'scraping' || id === 'journal'
+              ? `${label} · phase 3`
+              : label
+          }
           aria-label={label}
-          onClick={() => id !== 'search' && onUnavailable(label)}
+          onClick={() => {
+            const screen = id as ScreenId
+            if (screen === 'scraping' || screen === 'journal') onUnavailable(label)
+            else onNavigate(screen)
+          }}
         >
           <Icon />
           {badge > 0 && <span className="rail__badge">{badge > 99 ? '99+' : badge}</span>}
