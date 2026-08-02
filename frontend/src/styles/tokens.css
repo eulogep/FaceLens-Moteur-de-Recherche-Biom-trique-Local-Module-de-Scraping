@@ -1,0 +1,17 @@
+:root {
+  --bg-0: #0A1214;
+  --bg-1: #0F1B1F;
+  --bg-2: #152429;
+  --line: #1E3238;
+  --line-bright: #2C464E;
+  --ink: #E6F1EE;
+  --ink-dim: #8FA8A3;
+  --ink-faint: #5C7370;
+  --signal: #46E0C0;
+  --amber: #FFB454;
+  --coral: #FF6B5E;
+  --blue: #6AB7FF;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'IBM Plex Sans', sans-serif;
+}
