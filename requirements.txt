@@ -1,0 +1,22 @@
+# NE PAS mettre à jour insightface/onnxruntime sans revalidation complète buffalo_l (30/30 LFW)
+insightface==1.0.1
+onnxruntime==1.28.0
+faiss-cpu==1.14.3
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
+pydantic==2.13.4
+pydantic-settings==2.14.2
+python-dotenv==1.2.2
+playwright==1.62.0
+beautifulsoup4==4.15.0
+lxml==6.1.1
+trafilatura==2.2.0
+requests==2.34.2
+httpx==0.28.1
+imagehash==4.3.2
+Pillow==12.3.0
+numpy==2.5.1
+pytest==9.1.1
+pytest-asyncio==1.4.0
+python-multipart==0.0.32
+opencv-python==5.0.0.93

@@ -1,0 +1,55 @@
+services:
+  searxng:
+    # Mise à jour volontaire uniquement.
+    # Tester la compatibilité JSON /search?format=json après chaque update.
+    image: searxng/searxng:2026.8.1-8892414dc
+    container_name: facelens-searxng
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${SEARXNG_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - "SEARXNG_BASE_URL=http://localhost:${SEARXNG_PORT:-8080}/"
+    volumes:
+      - ./searxng:/etc/searxng
+    networks:
+      - facelens-net
+
+  facelens:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: facelens-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FACERLENS_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    environment:
+      - "INSIGHTFACE_MODEL=${MODEL_NAME:-buffalo_l}"
+      - "INSIGHTFACE_CTX_ID=${CTX_ID:--1}"
+      - "INSIGHTFACE_DET_THRESH=${DET_THRESH_DEFAULT:-0.5}"
+      - "INSIGHTFACE_DET_THRESH_FALLBACK=${DET_THRESH_FALLBACK:-0.4}"
+      - "THRESHOLD_DEDUP=${DEDUP_THRESHOLD:-0.95}"
+      - "THRESHOLD_STRONG=${SIMILARITY_STRONG:-0.70}"
+      - "THRESHOLD_MEDIUM=${SIMILARITY_MEDIUM:-0.50}"
+      - "SEARXNG_URL=http://searxng:8080"
+    volumes:
+      - ./data:/app/data
+      - ~/.insightface/models:/root/.insightface/models
+    depends_on:
+      searxng:
+        condition: service_healthy
+    networks:
+      - facelens-net
+
+networks:
+  facelens-net:
+    driver: bridge

@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/
+backups/
+assets/test_faces/
+~/.insightface/
+.insightface/
+frontend/node_modules/
+frontend/dist/
+.env
+*.db
+*.faiss
+*.index
+tmp/
