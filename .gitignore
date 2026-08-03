@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 data/
+data/insta_session.json
 backups/
 assets/test_faces/
 ~/.insightface/

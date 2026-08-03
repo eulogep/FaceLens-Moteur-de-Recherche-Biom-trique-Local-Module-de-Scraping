@@ -44,3 +44,48 @@ Cette commande :
 1. Ajoute `domaine-interdit.com` dans la table SQLite `excluded_domains`.
 2. Purge atomiquement tous les visages et vecteurs FAISS associés à ce domaine.
 3. Bloque tout futur scraping ciblant ce domaine.
+
+---
+
+## 5. Module Instagram public (instagrapi 2.16.25)
+
+Routes additives :
+- `POST /api/insta/profile` avec `{"username":"..."}`;
+- `POST /api/insta/medias` avec `{"username":"...","amount":10}`;
+- suivi via `GET /api/scrape/status/{job_id}`.
+
+L'étape 1 est strictement anonyme. L'adaptateur FaceLens appelle uniquement
+`user_info_by_username_gql` et `user_medias_gql`, noms publics réels dans
+instagrapi 2.16.25. Aucun login et aucune session ne sont chargés.
+
+### Limites observées le 3 août 2026
+
+- Python 3.14 : installation Windows et build Linux réussis.
+- Premier lookup anonyme du compte officiel `instagram` : HTTP 429.
+- La résolution HD et l'indexation réelle n'ont donc pas pu être validées.
+- FaceLens limite désormais instagrapi à une seule tentative publique et
+  termine le job en `partial`; aucun contournement n'est tenté.
+- Les méthodes web publiques Instagram sont opportunistes : 401/403/404/429
+  peuvent survenir sans changement de FaceLens.
+
+### Risques et conformité
+
+- Instagram peut bloquer l'IP ou un éventuel compte dédié ; respecter ses CGU
+  et `robots.txt`, ne jamais contourner CAPTCHA, checkpoint ou paywall.
+- Les embeddings faciaux sont des données biométriques sensibles au sens de
+  l'article 9 du RGPD : définir une base légale, minimiser la collecte, limiter
+  la conservation et traiter les demandes d'effacement.
+- La suppression reste atomique via `DELETE /api/scrape/face/{id}`, suivie de
+  `verify_integrity()`.
+
+### Étape 2 — réservée, non activée
+
+Le chemin prévu est `INSTAGRAM_SESSION_PATH=data/insta_session.json`, ignoré
+par Git. Si l'étape 2 est autorisée plus tard : compte jetable dédié, jamais le
+compte personnel, login initial dans l'application officielle, session
+re-dumpée après résolution manuelle d'un checkpoint.
+
+Limites maximales prévues : zéro parallélisme, délais aléatoires 5–8 s,
+30 profils par session, environ 100 requêtes/heure, puis pause de 15 minutes.
+`ChallengeRequired`, `FeedbackRequired` et `PleaseWaitFewMinutes` doivent
+arrêter proprement la session ; aucun challenge ne sera automatisé.

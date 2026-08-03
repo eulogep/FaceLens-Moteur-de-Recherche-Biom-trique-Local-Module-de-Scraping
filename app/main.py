@@ -63,6 +63,7 @@ app.include_router(spider_router)
 app.include_router(__import__("app.detect", fromlist=["router"]).router)
 app.include_router(__import__("app.faces_list", fromlist=["router"]).router)
 app.include_router(__import__("app.domains_list", fromlist=["router"]).router)
+app.include_router(__import__("app.routes.insta", fromlist=["router"]).router)
 
 @app.get("/")
 async def root():
