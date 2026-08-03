@@ -5,6 +5,10 @@
 
 **FaceLens** est un outil 100 % open source et self-hosted de recherche de visage par similarité biométrique (alternative libre à PimEyes / FaceCheck.ID).
 
+> Le dépôt contient uniquement le code source. Les corpus, images indexées,
+> bases SQLite, index FAISS, fichiers `.env` et sessions Instagram restent
+> locaux et sont exclus de Git.
+
 ---
 
 ## 🚀 Fonctionnalités Clés
