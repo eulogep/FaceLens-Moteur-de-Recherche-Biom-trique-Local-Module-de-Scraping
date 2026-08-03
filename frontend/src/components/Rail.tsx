@@ -6,7 +6,6 @@ interface RailProps {
   activeJobs: number
   activeScreen: ScreenId
   onNavigate: (screen: ScreenId) => void
-  onUnavailable: (label: string) => void
 }
 
 export function Rail({
@@ -14,7 +13,6 @@ export function Rail({
   activeJobs,
   activeScreen,
   onNavigate,
-  onUnavailable,
 }: RailProps) {
   const items = [
     { id: 'search', label: 'Recherche', icon: ReticleIcon, badge: 0 },
@@ -31,17 +29,9 @@ export function Rail({
           key={id}
           className="rail__item"
           data-active={id === activeScreen}
-          data-tooltip={
-            id === 'scraping' || id === 'journal'
-              ? `${label} · phase 3`
-              : label
-          }
+          data-tooltip={label}
           aria-label={label}
-          onClick={() => {
-            const screen = id as ScreenId
-            if (screen === 'scraping' || screen === 'journal') onUnavailable(label)
-            else onNavigate(screen)
-          }}
+          onClick={() => onNavigate(id as ScreenId)}
         >
           <Icon />
           {badge > 0 && <span className="rail__badge">{badge > 99 ? '99+' : badge}</span>}

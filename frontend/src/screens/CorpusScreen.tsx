@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
-import type { ExcludedDomain, Face } from '../api/types'
+import type { ExcludedDomain, Face, JournalInput } from '../api/types'
 import { CorpusCard } from '../components/CorpusCard'
 import { CloseIcon, CorpusIcon, TrashIcon } from '../components/icons'
 import type { ToastMessage } from '../components/Toast'
@@ -14,6 +14,7 @@ interface CorpusScreenProps {
   onDomainExcluded: () => void
   onSearchSimilar: (face: Face) => void
   onToast: (text: string, tone?: ToastMessage['tone']) => void
+  onJournal: (entry: JournalInput) => void
 }
 
 type SortMode = 'date-desc' | 'date-asc' | 'source'
@@ -36,6 +37,7 @@ export function CorpusScreen({
   onDomainExcluded,
   onSearchSimilar,
   onToast,
+  onJournal,
 }: CorpusScreenProps) {
   const [faces, setFaces] = useState<Face[]>([])
   const [listTotal, setListTotal] = useState(0)
@@ -121,8 +123,16 @@ export function CorpusScreen({
         onDeleteComplete()
       }, 260)
       onToast(`Face #${faceId} supprimée du corpus.`, 'success')
+      onJournal({
+        action: 'SUPPRESSION FACE',
+        target: `Face #${faceId}`,
+        result: 'SQLite + FAISS supprimés',
+        tone: 'success',
+      })
     } catch (error) {
-      onToast(error instanceof Error ? error.message : 'Suppression impossible.', 'error')
+      const message = error instanceof Error ? error.message : 'Suppression impossible.'
+      onJournal({ action: 'SUPPRESSION FACE', target: `Face #${faceId}`, result: message, tone: 'error' })
+      onToast(message, 'error')
     } finally {
       setBusy(false)
       setDeleteTarget(null)
@@ -151,8 +161,16 @@ export function CorpusScreen({
         `${domainTarget} exclu · ${result.deleted_faces_count} visage(s) supprimé(s).`,
         'success',
       )
+      onJournal({
+        action: 'EXCLUSION DOMAINE',
+        target: domainTarget,
+        result: `${result.deleted_faces_count} visage(s) supprimé(s)`,
+        tone: 'success',
+      })
     } catch (error) {
-      onToast(error instanceof Error ? error.message : "Exclusion du domaine impossible.", 'error')
+      const message = error instanceof Error ? error.message : "Exclusion du domaine impossible."
+      onJournal({ action: 'EXCLUSION DOMAINE', target: domainTarget, result: message, tone: 'error' })
+      onToast(message, 'error')
     } finally {
       setBusy(false)
       setDomainTarget(null)

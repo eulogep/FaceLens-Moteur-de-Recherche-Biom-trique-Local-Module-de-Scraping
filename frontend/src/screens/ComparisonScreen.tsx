@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import type { VerifyResponse } from '../api/types'
+import type { JournalInput, VerifyResponse } from '../api/types'
 import { Dropzone } from '../components/Dropzone'
 import { Gauge } from '../components/Gauge'
 import { CompareIcon, UploadIcon } from '../components/icons'
@@ -10,6 +10,7 @@ const DISCLAIMER = "La similarité faciale n'est pas une preuve d'identité. Vé
 
 interface ComparisonScreenProps {
   onToast: (text: string, tone?: ToastMessage['tone']) => void
+  onJournal: (entry: JournalInput) => void
 }
 
 function usePreview(file: File | null) {
@@ -75,7 +76,7 @@ function resultTone(result: VerifyResponse): 'signal' | 'amber' | 'coral' {
   return 'coral'
 }
 
-export function ComparisonScreen({ onToast }: ComparisonScreenProps) {
+export function ComparisonScreen({ onToast, onJournal }: ComparisonScreenProps) {
   const [imageA, setImageA] = useState<File | null>(null)
   const [imageB, setImageB] = useState<File | null>(null)
   const [result, setResult] = useState<VerifyResponse | null>(null)
@@ -91,8 +92,21 @@ export function ComparisonScreen({ onToast }: ComparisonScreenProps) {
         new Promise((resolve) => window.setTimeout(resolve, 700)),
       ])
       setResult(response)
+      onJournal({
+        action: 'COMPARAISON 1:1',
+        target: `${imageA.name} ↔ ${imageB.name}`,
+        result: `${response.verdict} · ${(response.similarity * 100).toFixed(1)}%`,
+        tone: response.verified ? 'success' : 'info',
+      })
     } catch (error) {
-      onToast(error instanceof Error ? error.message : 'Comparaison impossible.', 'error')
+      const message = error instanceof Error ? error.message : 'Comparaison impossible.'
+      onJournal({
+        action: 'COMPARAISON 1:1',
+        target: `${imageA.name} ↔ ${imageB.name}`,
+        result: message,
+        tone: 'error',
+      })
+      onToast(message, 'error')
     } finally {
       setLoading(false)
     }

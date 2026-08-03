@@ -79,6 +79,39 @@ export interface Job {
   updated_at: string
 }
 
+export interface ScrapeJobResponse {
+  job_id: string
+  status: string
+  target_url: string
+}
+
+export interface ScrapeUrlPayload {
+  url: string
+  max_images: number
+  source_type: string
+  dry_run: boolean
+}
+
+export interface ScrapeSearchPayload {
+  query: string
+  engine: 'searxng'
+  limit: number
+  dry_run: boolean
+}
+
+export type JournalTone = 'success' | 'error' | 'info'
+
+export interface JournalEvent {
+  id: string
+  timestamp: string
+  action: string
+  target: string
+  result: string
+  tone: JournalTone
+}
+
+export type JournalInput = Omit<JournalEvent, 'id' | 'timestamp'>
+
 export interface Stats {
   total_jobs: number
   scraped_faces: number

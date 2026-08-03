@@ -1,14 +1,34 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, checkSearxng } from './api/client'
-import type { Face, ScreenId, ServiceState, Stats } from './api/types'
+import type {
+  Face,
+  JournalEvent,
+  JournalInput,
+  ScreenId,
+  ServiceState,
+  Stats,
+} from './api/types'
 import { Rail } from './components/Rail'
 import { ToastRegion, type ToastMessage } from './components/Toast'
 import { TopBar } from './components/TopBar'
 import { ComparisonScreen } from './screens/ComparisonScreen'
 import { CorpusScreen } from './screens/CorpusScreen'
+import { JournalScreen } from './screens/JournalScreen'
 import { SearchScreen } from './screens/SearchScreen'
+import { ScrapingScreen } from './screens/ScrapingScreen'
 import './styles/tokens.css'
 import './styles/app.css'
+
+const JOURNAL_STORAGE_KEY = 'facelens.journal.v1'
+
+function readJournal(): JournalEvent[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(JOURNAL_STORAGE_KEY) ?? '[]')
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
 
 export default function App() {
   const [stats, setStats] = useState<Stats | null>(null)
@@ -19,6 +39,8 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenId>('search')
   const [faceCount, setFaceCount] = useState(0)
   const [searchSeed, setSearchSeed] = useState<File | null>(null)
+  const [activeJobs, setActiveJobs] = useState(0)
+  const [journal, setJournal] = useState<JournalEvent[]>(readJournal)
 
   const pushToast = useCallback((
     text: string,
@@ -63,6 +85,18 @@ export default function App() {
     return () => window.clearInterval(interval)
   }, [refreshHealth])
 
+  useEffect(() => {
+    localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(journal))
+  }, [journal])
+
+  const addJournal = useCallback((entry: JournalInput) => {
+    setJournal((current) => [{
+      ...entry,
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+    }, ...current].slice(0, 500))
+  }, [])
+
   const handleCorpusChanged = useCallback(() => {
     void refreshHealth()
   }, [refreshHealth])
@@ -92,21 +126,21 @@ export default function App() {
       />
       <Rail
         corpusCount={faceCount}
-        activeJobs={0}
+        activeJobs={activeJobs}
         activeScreen={activeScreen}
         onNavigate={setActiveScreen}
-        onUnavailable={(label) => pushToast(`${label} sera livré en phase 3.`, 'info')}
       />
       <main className="workspace">
         <div className="screen-stage" hidden={activeScreen !== 'search'}>
           <SearchScreen
             onToast={pushToast}
             onCorpusChanged={handleCorpusChanged}
+            onJournal={addJournal}
             initialFile={searchSeed}
           />
         </div>
         <div className="screen-stage" hidden={activeScreen !== 'compare'}>
-          <ComparisonScreen onToast={pushToast} />
+          <ComparisonScreen onToast={pushToast} onJournal={addJournal} />
         </div>
         <div className="screen-stage" hidden={activeScreen !== 'corpus'}>
           <CorpusScreen
@@ -116,7 +150,19 @@ export default function App() {
             onDomainExcluded={handleDomainExcluded}
             onSearchSimilar={searchSimilar}
             onToast={pushToast}
+            onJournal={addJournal}
           />
+        </div>
+        <div className="screen-stage" hidden={activeScreen !== 'scraping'}>
+          <ScrapingScreen
+            onActiveJobsChange={setActiveJobs}
+            onCorpusChanged={handleCorpusChanged}
+            onJournal={addJournal}
+            onToast={pushToast}
+          />
+        </div>
+        <div className="screen-stage" hidden={activeScreen !== 'journal'}>
+          <JournalScreen events={journal} onClear={() => setJournal([])} />
         </div>
       </main>
       <ToastRegion toasts={toasts} onDismiss={dismissToast} />

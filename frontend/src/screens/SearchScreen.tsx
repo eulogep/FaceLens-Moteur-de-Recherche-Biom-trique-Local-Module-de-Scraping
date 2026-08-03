@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
-import type { FaceDetection, Match, SearchResponse } from '../api/types'
+import type { FaceDetection, JournalInput, Match, SearchResponse } from '../api/types'
 import { MatchCard } from '../components/MatchCard'
 import { ScanViewport } from '../components/ScanViewport'
 import { CloseIcon, ReticleIcon, TrashIcon } from '../components/icons'
@@ -11,12 +11,14 @@ const DISCLAIMER = "La similarité faciale n'est pas une preuve d'identité. Vé
 interface SearchScreenProps {
   onToast: (text: string, tone?: ToastMessage['tone']) => void
   onCorpusChanged: (faceId?: number) => void
+  onJournal: (entry: JournalInput) => void
   initialFile?: File | null
 }
 
 export function SearchScreen({
   onToast,
   onCorpusChanged,
+  onJournal,
   initialFile,
 }: SearchScreenProps) {
   const [file, setFile] = useState<File | null>(null)
@@ -55,9 +57,17 @@ export function SearchScreen({
       ])
       setResponse(result)
       setDetections(detection.faces)
+      onJournal({
+        action: 'RECHERCHE 1:N',
+        target: file.name,
+        result: `${detection.faces.length} visage(s) · ${result.results.length} résultat(s)`,
+        tone: 'success',
+      })
       if (!detection.faces_detected) onToast("Aucun visage détecté dans cette image.", 'error')
     } catch (error) {
-      onToast(error instanceof Error ? error.message : 'Recherche impossible.', 'error')
+      const message = error instanceof Error ? error.message : 'Recherche impossible.'
+      onJournal({ action: 'RECHERCHE 1:N', target: file.name, result: message, tone: 'error' })
+      onToast(message, 'error')
     } finally {
       setLoading(false)
     }
@@ -72,9 +82,22 @@ export function SearchScreen({
         results: current.results.filter((match) => match.id !== deleteTarget.id),
       } : current)
       onToast(`Face #${deleteTarget.id} supprimée du corpus.`, 'success')
+      onJournal({
+        action: 'SUPPRESSION FACE',
+        target: `Face #${deleteTarget.id}`,
+        result: 'SQLite + FAISS supprimés',
+        tone: 'success',
+      })
       onCorpusChanged(deleteTarget.id)
     } catch (error) {
-      onToast(error instanceof Error ? error.message : 'Suppression impossible.', 'error')
+      const message = error instanceof Error ? error.message : 'Suppression impossible.'
+      onJournal({
+        action: 'SUPPRESSION FACE',
+        target: `Face #${deleteTarget.id}`,
+        result: message,
+        tone: 'error',
+      })
+      onToast(message, 'error')
     } finally {
       setDeleteTarget(null)
     }

@@ -6,6 +6,10 @@ import type {
   Face,
   FaceCountResponse,
   FaceListResponse,
+  Job,
+  ScrapeJobResponse,
+  ScrapeSearchPayload,
+  ScrapeUrlPayload,
   SearchResponse,
   Stats,
   VerifyResponse,
@@ -96,6 +100,23 @@ export const api = {
 
   getExcludedDomains: () =>
     request<ExcludedDomainListResponse>('/api/scrape/domains'),
+
+  startUrlJob: (payload: ScrapeUrlPayload) =>
+    request<ScrapeJobResponse>('/api/scrape/url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }),
+
+  startSearchJob: (payload: ScrapeSearchPayload) =>
+    request<ScrapeJobResponse>('/api/scrape/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }),
+
+  getJobStatus: (jobId: string) =>
+    request<Job>(`/api/scrape/status/${encodeURIComponent(jobId)}`),
 
   searchFaces(file: File, topK = 15, minSimilarity = 0) {
     const form = new FormData()
