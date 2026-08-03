@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { api } from '../api/client'
 import type { Job, JournalInput, Stats } from '../api/types'
+import { AnimatedNumber } from '../components/AnimatedNumber'
 import { JobCard } from '../components/JobCard'
 import { SpiderIcon } from '../components/icons'
 import type { ToastMessage } from '../components/Toast'
@@ -192,11 +193,11 @@ export function ScrapingScreen({
         <span className="case-chip">ROBOTS.TXT · 2–5 S</span>
       </header>
 
-      <section className="scrape-stats">
-        <div><strong>{stats?.total_jobs ?? 0}</strong><span>JOBS</span></div>
-        <div><strong>{stats?.scraped_faces ?? 0}</strong><span>FACES SCRAPÉES</span></div>
-        <div><strong>{stats?.total_indexed_faces ?? 0}</strong><span>INDEX TOTAL</span></div>
-        <div><strong>{stats?.excluded_domains_count ?? 0}</strong><span>DOMAINES EXCLUS</span></div>
+      <section className="scrape-stats" aria-busy={!stats}>
+        <div><strong>{stats ? <AnimatedNumber value={stats.total_jobs} /> : <span className="stat-skeleton" />}</strong><span>JOBS</span></div>
+        <div><strong>{stats ? <AnimatedNumber value={stats.scraped_faces} /> : <span className="stat-skeleton" />}</strong><span>FACES SCRAPÉES</span></div>
+        <div><strong>{stats ? <AnimatedNumber value={stats.total_indexed_faces} /> : <span className="stat-skeleton" />}</strong><span>INDEX TOTAL</span></div>
+        <div><strong>{stats ? <AnimatedNumber value={stats.excluded_domains_count} /> : <span className="stat-skeleton" />}</strong><span>DOMAINES EXCLUS</span></div>
       </section>
 
       <div className="scraping-layout">
