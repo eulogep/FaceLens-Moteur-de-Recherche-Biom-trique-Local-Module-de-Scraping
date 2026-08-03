@@ -14,4 +14,7 @@
   --font-display: 'Space Grotesk', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --font-body: 'IBM Plex Sans', sans-serif;
+  --motion-fast: 220ms;
+  --motion-base: 260ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
