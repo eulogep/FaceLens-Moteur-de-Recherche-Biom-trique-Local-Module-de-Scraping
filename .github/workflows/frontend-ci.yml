@@ -1,0 +1,64 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: TypeScript and Vite build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    env:
+      CI: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check without warnings
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tee "$RUNNER_TEMP/frontend-typecheck.log"
+
+          if grep -Eiq \
+            '(^|[^[:alnum:]_])warn(ing)?([^[:alnum:]_]|$)|deprecated|\(!\)' \
+            "$RUNNER_TEMP/frontend-typecheck.log"; then
+            echo "::error::TypeScript emitted a warning."
+            exit 1
+          fi
+
+      - name: Build without warnings
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee "$RUNNER_TEMP/frontend-build.log"
+
+          if grep -Eiq \
+            '(^|[^[:alnum:]_])warn(ing)?([^[:alnum:]_]|$)|deprecated|\(!\)' \
+            "$RUNNER_TEMP/frontend-build.log"; then
+            echo "::error::The frontend build emitted a warning."
+            exit 1
+          fi
