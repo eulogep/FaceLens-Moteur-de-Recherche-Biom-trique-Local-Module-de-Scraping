@@ -15,6 +15,20 @@
 - **CLI Catfish Checker** : Script d'analyse rapide en ligne de commande avec support `--dry-run`.
 - **Droit à l'Oubli & Exclusion** : Endpoints de suppression de visage et d'exclusion de domaine.
 
+## 🖥️ Console Web
+
+FaceLens inclut une console React responsive pour piloter localement les
+principaux workflows :
+
+- recherche faciale 1:N avec détection et landmarks réels ;
+- comparaison directe 1:1 ;
+- consultation et suppression contrôlée du corpus ;
+- lancement et suivi des collectes publiques ;
+- journal local exportable des opérations.
+
+Les instructions d'installation, de configuration et de build se trouvent
+dans [`frontend/README.md`](frontend/README.md).
+
 ---
 
 ## 🛠️ Stack Technique
