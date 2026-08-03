@@ -137,3 +137,11 @@ docker-compose up -d
 ```bash
 python -m pytest tests/ -v
 ```
+
+---
+
+## 🤝 Contribution
+
+Créez une branche dédiée, vérifiez les tests concernés puis ouvrez une
+Pull Request vers `main`. Les corpus, images indexées, bases et sessions
+locales ne doivent jamais être joints à une contribution.
