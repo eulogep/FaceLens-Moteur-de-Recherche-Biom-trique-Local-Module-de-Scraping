@@ -1,7 +1,9 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from core.config import settings
 from core.db import DatabaseManager
@@ -39,8 +41,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# The corpus is sensitive. Browser requests are limited to explicit local
-# frontend origins; credentials are not enabled with wildcard origins.
+# The application is self-hosted and bound to loopback in Docker. Browser
+# requests are limited to explicitly configured local frontend origins.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.CORS_ORIGINS),
@@ -49,6 +51,10 @@ app.add_middleware(
     allow_headers=["Content-Type"],
     max_age=600,
 )
+
+images_dir = os.path.join(settings.STORAGE_DIR, "images")
+os.makedirs(images_dir, exist_ok=True)
+app.mount("/static/images", StaticFiles(directory=images_dir), name="static_images")
 
 app.include_router(faces_router)
 app.include_router(spider_router)
