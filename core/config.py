@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 import os
+from typing import Annotated
+from urllib.parse import urlparse
+
 from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -40,10 +45,11 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("THRESHOLD_DEDUP", "DEDUP_THRESHOLD"),
     )
 
-    # Runtime and network limits
+    # Local API protection and network limits
+    FACELENS_API_KEY: str = Field(min_length=32, repr=False)
     FACELENS_PORT: int = 8000
     SEARXNG_PORT: int = 8080
-    CORS_ORIGINS: tuple[str, ...] = (
+    CORS_ORIGINS: Annotated[tuple[str, ...], NoDecode] = (
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     )
@@ -67,14 +73,33 @@ class Settings(BaseSettings):
         "Vérifiez les sources avant toute conclusion."
     )
 
+    @field_validator("FACELENS_API_KEY")
+    @classmethod
+    def validate_api_key(cls, value: str) -> str:
+        key = value.strip()
+        if len(key) < 32:
+            raise ValueError("FACELENS_API_KEY doit contenir au moins 32 caractères.")
+        return key
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> tuple[str, ...]:
         if isinstance(value, str):
-            return tuple(origin.strip() for origin in value.split(",") if origin.strip())
-        if isinstance(value, (list, tuple, set)):
-            return tuple(str(origin).strip() for origin in value if str(origin).strip())
-        raise ValueError("CORS_ORIGINS doit être une liste ou une chaîne séparée par des virgules.")
+            origins = tuple(origin.strip() for origin in value.split(",") if origin.strip())
+        elif isinstance(value, (list, tuple, set)):
+            origins = tuple(str(origin).strip() for origin in value if str(origin).strip())
+        else:
+            raise ValueError("CORS_ORIGINS doit être une liste ou une chaîne séparée par des virgules.")
+
+        if not origins:
+            raise ValueError("CORS_ORIGINS ne peut pas être vide.")
+        if "*" in origins:
+            raise ValueError("CORS_ORIGINS ne doit jamais contenir le joker '*'.")
+        for origin in origins:
+            parsed = urlparse(origin)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.path not in {"", "/"}:
+                raise ValueError(f"Origine CORS invalide: {origin}")
+        return origins
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
