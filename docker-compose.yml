@@ -28,7 +28,7 @@ services:
     ports:
       - "127.0.0.1:${FACERLENS_PORT:-8000}:8000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      test: ["CMD-SHELL", "curl -fsS -H \"X-FaceLens-API-Key: $$FACELENS_API_KEY\" http://localhost:8000/ >/dev/null"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -41,6 +41,8 @@ services:
       - "THRESHOLD_STRONG=${SIMILARITY_STRONG:-0.70}"
       - "THRESHOLD_MEDIUM=${SIMILARITY_MEDIUM:-0.50}"
       - "SEARXNG_URL=http://searxng:8080"
+      - "FACELENS_API_KEY=${FACELENS_API_KEY:?FACELENS_API_KEY must be set in .env}"
+      - "CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}"
     volumes:
       - ./data:/app/data
       - ~/.insightface/models:/root/.insightface/models
