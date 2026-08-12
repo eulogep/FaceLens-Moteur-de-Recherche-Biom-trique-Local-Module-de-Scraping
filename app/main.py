@@ -1,13 +1,12 @@
-import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from core.config import settings
 from core.db import DatabaseManager
 from core.face_engine import get_face_engine
+from core.security import require_api_key
 from core.vector_index import VectorIndexManager
 
 import app.routes.faces as faces_module
@@ -24,8 +23,7 @@ async def lifespan(app: FastAPI):
     db.verify_integrity(index)
     get_face_engine()
 
-    faces_module.db_manager = db
-    faces_module.index_manager = index
+    faces_module.configure_managers(db, index)
     spider_module.db_manager = db
     spider_module.index_manager = index
     yield
@@ -37,24 +35,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="FaceLens API",
     description="Moteur local de similarité faciale avec garde-fous de collecte et de stockage.",
-    version="1.1.0",
+    version="1.2.0",
     lifespan=lifespan,
+    dependencies=[Depends(require_api_key)],
 )
 
-# The application is self-hosted and bound to loopback in Docker. Browser
-# requests are limited to explicitly configured local frontend origins.
+# The application is self-hosted and browser requests are limited to explicit origins.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.CORS_ORIGINS),
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-FaceLens-API-Key"],
     max_age=600,
 )
-
-images_dir = os.path.join(settings.STORAGE_DIR, "images")
-os.makedirs(images_dir, exist_ok=True)
-app.mount("/static/images", StaticFiles(directory=images_dir), name="static_images")
 
 app.include_router(faces_router)
 app.include_router(spider_router)
