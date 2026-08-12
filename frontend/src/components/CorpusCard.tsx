@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faceImageUrl } from '../api/client'
+import { api } from '../api/client'
 import type { Face } from '../api/types'
 import { ReticleIcon, TrashIcon } from './icons'
 
@@ -19,14 +19,28 @@ function sourceLabel(url: string | null, sourceType: string) {
   }
 }
 
-export function CorpusCard({
-  face,
-  removing,
-  onSearchSimilar,
-  onDelete,
-}: CorpusCardProps) {
+export function CorpusCard({ face, removing, onSearchSimilar, onDelete }: CorpusCardProps) {
   const ref = useRef<HTMLElement>(null)
   const [revealed, setRevealed] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
+
+  useEffect(() => {
+    let active = true
+    let objectUrl = ''
+    void api.imageObjectUrl(face)
+      .then((url) => {
+        objectUrl = url
+        if (active) setImageUrl(url)
+        else URL.revokeObjectURL(url)
+      })
+      .catch(() => {
+        if (active) setImageUrl('')
+      })
+    return () => {
+      active = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [face.id, face.image_path])
 
   useEffect(() => {
     const node = ref.current
@@ -45,14 +59,9 @@ export function CorpusCard({
   }, [])
 
   return (
-    <article
-      ref={ref}
-      className="corpus-card"
-      data-revealed={revealed}
-      data-removing={removing}
-    >
+    <article ref={ref} className="corpus-card" data-revealed={revealed} data-removing={removing}>
       <img
-        src={faceImageUrl(face.image_path)}
+        src={imageUrl || undefined}
         alt={face.person_name ?? `Face #${face.id}`}
         loading="lazy"
       />
