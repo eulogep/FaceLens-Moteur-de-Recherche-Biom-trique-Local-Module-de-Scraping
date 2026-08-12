@@ -1,4 +1,5 @@
-import { faceImageUrl } from '../api/client'
+import { useEffect, useState } from 'react'
+import { api } from '../api/client'
 import type { Match } from '../api/types'
 import { Gauge } from './Gauge'
 import { CompareIcon, ExternalIcon, TrashIcon } from './icons'
@@ -19,18 +20,32 @@ const verdictMap = {
 
 export function MatchCard({ match, index, onCompare, onDelete }: MatchCardProps) {
   const verdict = verdictMap[match.verdict]
-  const date = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' })
-    .format(new Date(match.created_at))
+  const date = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(new Date(match.created_at))
+  const [imageUrl, setImageUrl] = useState('')
+
+  useEffect(() => {
+    let active = true
+    let objectUrl = ''
+    void api.imageObjectUrl(match)
+      .then((url) => {
+        objectUrl = url
+        if (active) setImageUrl(url)
+        else URL.revokeObjectURL(url)
+      })
+      .catch(() => {
+        if (active) setImageUrl('')
+      })
+    return () => {
+      active = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [match.id, match.image_path])
 
   return (
-    <article
-      className="match-card"
-      data-tone={verdict.tone}
-      style={{ animationDelay: `${index * 80}ms` }}
-    >
+    <article className="match-card" data-tone={verdict.tone} style={{ animationDelay: `${index * 80}ms` }}>
       <img
         className="match-card__image"
-        src={faceImageUrl(match.image_path)}
+        src={imageUrl || undefined}
         alt={match.person_name ? `Visage de ${match.person_name}` : `Visage #${match.id}`}
       />
       <div className="match-card__body">
@@ -51,13 +66,7 @@ export function MatchCard({ match, index, onCompare, onDelete }: MatchCardProps)
           <span>{date}</span>
         </div>
         {match.source_url ? (
-          <a
-            className="source-link"
-            href={match.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={match.source_url}
-          >
+          <a className="source-link" href={match.source_url} target="_blank" rel="noopener noreferrer" title={match.source_url}>
             <ExternalIcon /> {match.source_url}
           </a>
         ) : (
