@@ -4,11 +4,16 @@ import httpx
 import trafilatura
 
 from core.config import settings
-from core.security import RemoteURLValidationError, validate_image_bytes, validate_public_http_url
+from core.security import (
+    ImageValidationError,
+    RemoteURLValidationError,
+    validate_image_bytes,
+    validate_public_http_url,
+)
 
 
 class ContextExtractor:
-    """Extracts public page text and safely downloads candidate image payloads."""
+    """Extract public page text and safely download candidate image payloads."""
 
     @staticmethod
     def extract_page_text(html: str) -> str:
@@ -19,11 +24,11 @@ class ContextExtractor:
 
     @staticmethod
     async def download_image_bytes(image_url: str, timeout: float = 10.0) -> Optional[bytes]:
-        """Fetch only validated public image data within a strict byte budget."""
+        """Fetch one validated public image within the remote-content byte budget."""
         try:
             await validate_public_http_url(image_url)
             headers = {
-                "User-Agent": "FaceLensBot/1.1",
+                "User-Agent": "FaceLensBot/1.2",
                 "Accept": "image/jpeg,image/png,image/webp",
             }
             async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
@@ -40,7 +45,11 @@ class ContextExtractor:
                         if total > settings.MAX_REMOTE_IMAGE_BYTES:
                             return None
                         chunks.append(chunk)
-            payload, _ = validate_image_bytes(b"".join(chunks), content_type)
+            payload, _ = validate_image_bytes(
+                b"".join(chunks),
+                content_type,
+                max_bytes=settings.MAX_REMOTE_IMAGE_BYTES,
+            )
             return payload
-        except (RemoteURLValidationError, httpx.HTTPError, ValueError):
+        except (ImageValidationError, RemoteURLValidationError, httpx.HTTPError):
             return None

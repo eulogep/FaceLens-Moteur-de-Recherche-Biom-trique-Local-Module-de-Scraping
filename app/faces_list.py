@@ -6,7 +6,6 @@ from pydantic import BaseModel
 from app.routes.faces import get_db
 from core.db import DatabaseManager
 
-
 router = APIRouter(prefix="/api/faces", tags=["Faces"])
 
 
@@ -31,14 +30,16 @@ class FaceCountResponse(BaseModel):
     total: int
 
 
+def _image_reference(face_id: int) -> str:
+    return f"/api/faces/{face_id}/image"
+
+
 def _filters(source_type: str, query: str) -> tuple[list[str], list[str]]:
     clauses: list[str] = []
     parameters: list[str] = []
-
     if source_type:
         clauses.append("source_type = ?")
         parameters.append(source_type)
-
     if query:
         pattern = f"%{query}%"
         clauses.append(
@@ -50,7 +51,6 @@ def _filters(source_type: str, query: str) -> tuple[list[str], list[str]]:
             ")"
         )
         parameters.extend([pattern, pattern, pattern, pattern])
-
     return clauses, parameters
 
 
@@ -64,24 +64,25 @@ async def list_faces(
 ) -> FaceListResponse:
     clauses, parameters = _filters(source_type.strip(), q.strip())
     where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
-
     with db.get_connection() as connection:
         cursor = connection.cursor()
         cursor.execute(f"SELECT COUNT(*) FROM faces{where}", parameters)
         total = int(cursor.fetchone()[0])
         cursor.execute(
-            "SELECT id, image_path, person_name, source_url, source_type, "
-            f"tags, created_at FROM faces{where} "
-            "ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+            "SELECT id, person_name, source_url, source_type, tags, created_at "
+            f"FROM faces{where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
             [*parameters, limit, offset],
         )
-        items = [FaceListItem(**dict(row)) for row in cursor.fetchall()]
-
+        items = [
+            FaceListItem(
+                **dict(row),
+                image_path=_image_reference(int(row["id"])),
+            )
+            for row in cursor.fetchall()
+        ]
     return FaceListResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @router.get("/count", response_model=FaceCountResponse)
-async def count_faces(
-    db: DatabaseManager = Depends(get_db),
-) -> FaceCountResponse:
+async def count_faces(db: DatabaseManager = Depends(get_db)) -> FaceCountResponse:
     return FaceCountResponse(total=db.count_faces())
