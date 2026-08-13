@@ -75,11 +75,14 @@ def test_remote_image_downloader_rejects_private_url_before_fetching():
     assert result is None
 
 
-def test_politeness_uses_full_origin_for_robots_and_rate_limits():
+def test_politeness_normalizes_equivalent_origins_for_robots_and_rate_limits():
     manager = PolitenessManager()
     assert manager.get_domain("http://example.test:8080/page") == "example.test"
+    assert manager.get_origin("https://EXAMPLE.test./page") == "https://example.test:443"
+    assert manager.get_origin("https://example.test:0443/page") == "https://example.test:443"
     assert manager.get_origin("http://example.test:8080/page") == "http://example.test:8080"
-    assert manager.get_semaphore("http://example.test:8080") is not manager.get_semaphore("http://example.test:8081")
+    assert manager.get_semaphore("https://example.test:443") is manager.get_semaphore("https://example.test:443")
+    assert manager.get_semaphore("https://example.test:443") is not manager.get_semaphore("https://example.test:444")
 
 
 def test_static_biometric_directory_is_not_mounted():
