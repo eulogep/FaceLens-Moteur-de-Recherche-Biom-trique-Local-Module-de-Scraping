@@ -240,7 +240,7 @@ Avant d’utiliser un corpus réel, effectuez une vérification simple avec des 
 | Tests backend | `FACELENS_API_KEY="…" pytest -q` | Authentification, CORS, validation d’image, contrôles d’URL et régressions API. |
 | Audit Python | `pip-audit` | Vulnérabilités connues dans les dépendances Python installées. |
 | Contrôle frontend | `cd frontend && npm run typecheck && npm run build` | Typage TypeScript et construction du bundle de production. |
-| Santé production simulée | `curl -H "X-FaceLens-API-Key: $FACELENS_API_KEY" http://localhost:8000/` | Démarrage du serveur avec ses réglages de production. |
+| Intégration de production simulée | `python scripts/production_integration_sim.py` | Démarre une API Uvicorn isolée avec les réglages de production, puis contrôle la clé API, CORS, les images, le corpus isolé et l’absence de stockage statique exposé. |
 
 Les workflows GitHub Actions exécutent ces contrôles sur les contributions à la branche principale. Consultez les fichiers de [CI backend](.github/workflows/backend-ci.yml) et de [CI frontend](.github/workflows/frontend-ci.yml) pour le détail exact.
 
