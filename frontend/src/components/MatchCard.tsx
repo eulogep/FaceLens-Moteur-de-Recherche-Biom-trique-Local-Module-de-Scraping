@@ -21,31 +21,33 @@ const verdictMap = {
 export function MatchCard({ match, index, onCompare, onDelete }: MatchCardProps) {
   const verdict = verdictMap[match.verdict]
   const date = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(new Date(match.created_at))
-  const [imageUrl, setImageUrl] = useState('')
+  const imageKey = `${match.id}:${match.image_path}`
+  const [image, setImage] = useState<{ key: string; url: string } | null>(null)
 
   useEffect(() => {
     let active = true
     let objectUrl = ''
+    setImage(null)
     void api.imageObjectUrl(match)
       .then((url) => {
         objectUrl = url
-        if (active) setImageUrl(url)
+        if (active) setImage({ key: imageKey, url })
         else URL.revokeObjectURL(url)
       })
       .catch(() => {
-        if (active) setImageUrl('')
+        if (active) setImage(null)
       })
     return () => {
       active = false
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [match.id, match.image_path])
+  }, [match.id, match.image_path, imageKey])
 
   return (
     <article className="match-card" data-tone={verdict.tone} style={{ animationDelay: `${index * 80}ms` }}>
       <img
         className="match-card__image"
-        src={imageUrl || undefined}
+        src={image?.key === imageKey ? image.url : undefined}
         alt={match.person_name ? `Visage de ${match.person_name}` : `Visage #${match.id}`}
       />
       <div className="match-card__body">
